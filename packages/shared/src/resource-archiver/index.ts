@@ -24,6 +24,7 @@ export type HttpCredentials = {
 // a custom interface that satisfies both playwright's CDPSession and chrome-remote-interface's CDP.Client types.
 interface CDPClient {
   on: (eventName: keyof Protocol.Events, handlerFunction: (params?: any) => void) => void;
+  off?: (eventName: keyof Protocol.Events, handlerFunction: (params?: any) => void) => void;
   send: (eventName: keyof Protocol.CommandParameters, payload?: any) => Promise<any>;
 }
 
@@ -32,7 +33,7 @@ export class ResourceArchiver {
 
   private client: CDPClient;
 
-  /** 
+  /**
    Specifies which domains (origins) we should archive resources for (by default we only archive same-origin resources).
    Useful in situations where the environment running the archived storybook (e.g. in CI) may be restricted to an intranet or other domain restrictions
   */
@@ -50,6 +51,11 @@ export class ResourceArchiver {
    */
   private httpCredentials: HttpCredentials;
 
+  /**
+   * Currently active requests
+   */
+  private pendingRequests = new Set<Protocol.Fetch.requestPausedPayload['requestId']>();
+
   constructor(cdpClient: CDPClient, allowedDomains?: string[], httpCredentials?: HttpCredentials) {
     this.client = cdpClient;
     // tack on the protocol so we can properly check if requests are cross-origin
@@ -58,9 +64,19 @@ export class ResourceArchiver {
   }
 
   async watch() {
-    this.client.on('Fetch.requestPaused', this.requestPaused.bind(this));
-    this.client.on('Fetch.authRequired', this.authRequired.bind(this));
+    this.client.on('Fetch.requestPaused', this.requestPaused);
+    this.client.on('Fetch.authRequired', this.authRequired);
     await this.client.send('Fetch.enable', { handleAuthRequests: true });
+  }
+
+  async off() {
+    this.client.off?.('Fetch.requestPaused', this.requestPaused);
+    this.client.off?.('Fetch.authRequired', this.authRequired);
+    await this.client.send('Fetch.disable');
+  }
+
+  getPendingRequestsCount() {
+    return this.pendingRequests.size;
   }
 
   async clientSend<T extends keyof Protocol.CommandParameters>(
@@ -77,7 +93,7 @@ export class ResourceArchiver {
     }
   }
 
-  async authRequired({ requestId, request }: Protocol.Fetch.authRequiredPayload): Promise<void> {
+  authRequired = async ({ requestId, request }: Protocol.Fetch.authRequiredPayload) => {
     await this.clientSend(request, 'Fetch.continueWithAuth', {
       requestId,
       authChallengeResponse: {
@@ -85,16 +101,18 @@ export class ResourceArchiver {
         ...this.httpCredentials,
       },
     });
-  }
+  };
 
-  async requestPaused({
+  requestPaused = async ({
     requestId,
     request,
     responseStatusCode,
     responseStatusText,
     responseErrorReason,
     responseHeaders,
-  }: Protocol.Fetch.requestPausedPayload) {
+  }: Protocol.Fetch.requestPausedPayload) => {
+    this.pendingRequests.delete(requestId);
+
     // We only need to capture assets that will render when the DOM snapshot is rendered,
     // so we only need to handle GET requests.
     if (!request.method.match(/get/i)) {
@@ -146,11 +164,13 @@ export class ResourceArchiver {
       return;
     }
 
+    this.pendingRequests.add(requestId);
+
     await this.clientSend(request, 'Fetch.continueRequest', {
       requestId,
       interceptResponse: true,
     });
-  }
+  };
 
   private async handleSuccessfulResponse(
     requestPausedPayload: Pick<
