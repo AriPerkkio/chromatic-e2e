@@ -25,4 +25,6 @@ packages/cypress/tests/cypress/downloads/
 packages/cypress/tests/cypress/test-downloads/
 packages/*/coverage/
 coverage
+chromatic-archives/
 packages/chromatic-archives/
+packages/vitest/**/chromatic-archives/
