@@ -30,5 +30,6 @@ export default defineProject({
 declare module 'vitest' {
   export interface ProvidedContext {
     processCwd: string;
+    testName?: string;
   }
 }
