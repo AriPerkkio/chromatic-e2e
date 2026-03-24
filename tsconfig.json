@@ -16,7 +16,8 @@
     "skipLibCheck": true,
     "target": "ES2020",
     "types": ["node", "cypress"],
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "useUnknownInCatchVariables": false
   },
   "include": ["src", "tests", "scripts", "vitest.config.ts"]
 }
