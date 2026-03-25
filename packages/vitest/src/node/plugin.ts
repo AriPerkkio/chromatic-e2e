@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import type {} from 'vitest/config';
 import type { Vite } from 'vitest/node';
 import colors from 'tinyrainbow';
+import { DEFAULT_GLOBAL_RESOURCE_ARCHIVE_TIMEOUT_MS } from '@chromatic-com/shared-e2e';
 import { createCommands } from './commands';
 import { type ResolvedOptions, type Options } from '../types';
 
@@ -13,6 +14,8 @@ export function chromaticPlugin(userOptions: Options = {}): Vite.Plugin {
   const options: ResolvedOptions = {
     assetDomains: [],
     outputDirectory: process.cwd(),
+    resourceArchiveTimeout: DEFAULT_GLOBAL_RESOURCE_ARCHIVE_TIMEOUT_MS,
+    idleNetworkInterval: 100,
     ...userOptions,
   };
 
