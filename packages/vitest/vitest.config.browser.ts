@@ -31,5 +31,6 @@ declare module 'vitest' {
   export interface ProvidedContext {
     processCwd: string;
     testName?: string;
+    disableAutoSnapshot: 'module' | 'describe' | 'describe-nested' | 'test' | 'test-second';
   }
 }
