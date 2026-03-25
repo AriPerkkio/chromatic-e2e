@@ -34,6 +34,37 @@ test('adds browser commands', async () => {
   `);
 });
 
+test('adds tags', async () => {
+  const config = await getResolvedConfig(undefined, { tags: ['my-tag-for-vrt'] });
+
+  expect(config.tags).toMatchInlineSnapshot(`
+    [
+      {
+        "description": "Visual Regression Tests for \`@chromatic-com/vitest\`",
+        "name": "my-tag-for-vrt",
+      },
+    ]
+  `);
+});
+
+test('does not override user-defined tags', async () => {
+  const config = await getResolvedConfig(
+    {
+      tags: [{ name: 'my-tag-for-vrt', description: 'Custom description' }],
+    },
+    { tags: ['my-tag-for-vrt'] }
+  );
+
+  expect(config.tags).toMatchInlineSnapshot(`
+    [
+      {
+        "description": "Custom description",
+        "name": "my-tag-for-vrt",
+      },
+    ]
+  `);
+});
+
 test('can be scoped to a Vitest project', async () => {
   const tests: TestModule[] = [];
 
