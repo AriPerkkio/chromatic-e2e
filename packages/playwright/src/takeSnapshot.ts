@@ -36,12 +36,42 @@ async function takeSnapshot(
     logger.log(`CONSOLE: "${msg.text()}"`);
   });
 
+  const iframes: Buffer[] = [];
+
+  for (const frame of page.frames().slice(1)) {
+    console.log(`Frame URL: ${frame.url()}`);
+
+    // Serialize and capture the DOM
+    const iframeSnapshot: { domSnapshot: serializedNodeWithId } =
+      await frame.evaluate(getRrwebScript());
+
+    iframes.push(Buffer.from(JSON.stringify(iframeSnapshot.domSnapshot)));
+  }
+
   // Serialize and capture the DOM
   const {
     domSnapshot,
     pseudoClassIds,
   }: { domSnapshot: serializedNodeWithId; pseudoClassIds: DOMSnapshots[string]['pseudoClassIds'] } =
-    await page.evaluate(dedent`
+    await page.evaluate(getRrwebScript());
+
+  const bufferedSnapshot = Buffer.from(JSON.stringify(domSnapshot));
+  if (!chromaticSnapshots.has(testId)) {
+    // map used so the snapshots are always in order
+    chromaticSnapshots.set(testId, new Map());
+  }
+  chromaticSnapshots.get(testId).set(name, {
+    snapshot: bufferedSnapshot,
+    viewport: page.viewportSize() || { width: 1280, height: 720 },
+    pseudoClassIds,
+    iframes,
+  });
+}
+
+export { takeSnapshot };
+
+function getRrwebScript() {
+  return dedent`
     ${rrweb};
 
     // this code was erroring the page.evaluate() when it was passed as a function to page.evaluate(),
@@ -115,18 +145,5 @@ async function takeSnapshot(
         });
       });
     }
-  `);
-
-  const bufferedSnapshot = Buffer.from(JSON.stringify(domSnapshot));
-  if (!chromaticSnapshots.has(testId)) {
-    // map used so the snapshots are always in order
-    chromaticSnapshots.set(testId, new Map());
-  }
-  chromaticSnapshots.get(testId).set(name, {
-    snapshot: bufferedSnapshot,
-    viewport: page.viewportSize() || { width: 1280, height: 720 },
-    pseudoClassIds,
-  });
+  `;
 }
-
-export { takeSnapshot };

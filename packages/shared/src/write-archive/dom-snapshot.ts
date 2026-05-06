@@ -13,12 +13,15 @@ const CSS_URL_REGEX = /url\((?!['"]?(?:data):)['"]?([^'")]*)['"]?\)/gi;
 export class DOMSnapshot {
   snapshot: serializedNodeWithId;
   pseudoClassIds: DOMSnapshots[string]['pseudoClassIds'];
+  iframes?: serializedNodeWithId[];
 
   constructor({
     snapshot,
+    iframes,
     pseudoClassIds,
   }: {
     snapshot: DOMSnapshots[string]['snapshot'] | string;
+    iframes?: DOMSnapshots[string]['iframes'];
     pseudoClassIds: DOMSnapshots[string]['pseudoClassIds'];
   }) {
     if (Buffer.isBuffer(snapshot)) {
@@ -29,12 +32,14 @@ export class DOMSnapshot {
     }
 
     this.pseudoClassIds = pseudoClassIds;
+    this.iframes = iframes.map((iframe) => JSON.parse(iframe.toString('utf-8')));
   }
 
   async mapAssetPaths(sourceMap: Map<string, string>) {
     const savedSnapshot: SavedSnapshot = {
       snapshot: await this.mapNode(this.snapshot, sourceMap),
       pseudoClassIds: this.pseudoClassIds,
+      iframes: this.iframes,
     };
 
     return JSON.stringify(savedSnapshot);

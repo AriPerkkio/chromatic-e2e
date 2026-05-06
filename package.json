@@ -18,6 +18,7 @@
     "archive-storybook:vitest": "CHROMATIC_ARCHIVE_LOCATION=test/.vitest/chromatic yarn workspace @chromatic-com/vitest exec archive-storybook",
     "prebuild": "yarn clean",
     "build": "yarn prebuild && yarn workspaces foreach --all --topological-dev --parallel run build && jiti scripts/prepare-embedded.ts",
+    "build:playwright": "yarn workspace @chromatic-com/playwright run clean && yarn workspace @chromatic-com/playwright run build && jiti scripts/prepare-embedded.ts playwright",
     "prepare-embedded": "jiti scripts/prepare-embedded.ts",
     "build-archive-storybook:cypress": "CHROMATIC_ARCHIVE_LOCATION=tests/cypress/test-downloads yarn workspace @chromatic-com/cypress exec build-archive-storybook",
     "build-archive-storybook:playwright": "CHROMATIC_ARCHIVE_LOCATION=test-results yarn workspace @chromatic-com/playwright build-archive-storybook",

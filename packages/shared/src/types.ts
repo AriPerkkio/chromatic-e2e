@@ -47,6 +47,8 @@ export type DOMSnapshots = Record<
     /** Buffer of stringified rrweb-snapshot `serializedNodeWithId` JSON */
     snapshot: Buffer;
 
+    iframes?: Buffer[];
+
     /** Viewport dimensions from the exact time the snapshot was taken */
     viewport: Viewport;
 
@@ -61,4 +63,5 @@ export type DOMSnapshots = Record<
 export interface SavedSnapshot {
   snapshot: serializedNodeWithId;
   pseudoClassIds: DOMSnapshots[string]['pseudoClassIds'];
+  iframes: serializedNodeWithId[];
 }

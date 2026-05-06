@@ -59,7 +59,7 @@ async function fetchSnapshot(context: RenderContext<RRWebFramework>): Promise<Sa
 }
 
 const renderToCanvas: RenderToCanvas<RRWebFramework> = async (context) => {
-  const { snapshot, pseudoClassIds } = await fetchSnapshot(context);
+  const { snapshot, iframes, pseudoClassIds } = await fetchSnapshot(context);
 
   // The snapshot is a representation of a complete HTML document
   const htmlNode = findHtmlNode(snapshot);
@@ -84,6 +84,13 @@ const renderToCanvas: RenderToCanvas<RRWebFramework> = async (context) => {
 
   // Now we insert the rebuilt html element in the DOM
   document.replaceChild(html, document.children[0]);
+
+  for (const iframe of Array.from(html.querySelectorAll('iframe'))) {
+    const root = iframe.contentDocument || (iframe.getRootNode() as HTMLElement);
+    const iframeHtml = rebuild(iframes[0]!, { doc: root } as any) as HTMLElement;
+
+    root.replaceChild(iframeHtml, root.children[0]);
+  }
 
   // Storybook's WebView will throw an error if it cannot find these two ids in the DOM.
   // We never render docs (so the #storybook-docs doesn't matter), and our`renderToCanvas`
